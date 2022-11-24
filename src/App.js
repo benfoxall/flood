@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 function App() {
   const [endpoint, setEndpoint] = useState("/");
   const [time, setTime] = useState(500);
+  const [capture, setCapture] = useState(false);
 
-  const [ctx, setCtx] = useState();
   const [responses, setResponses] = useState([
     {
       start: 100,
@@ -18,61 +18,61 @@ function App() {
     },
   ]);
 
-  const start = () => {
-    setCtx({ endpoint, time });
-  };
-
   useEffect(() => {
-    if (ctx) {
-      setResponses([]);
+    if (capture === false) return;
 
-      const interval = setInterval(async () => {
-        console.log("tick");
+    setResponses([]);
 
-        const control = new AbortController();
-        setTimeout(() => control.abort(), ctx.timeout);
+    const interval = setInterval(async () => {
+      console.log("tick");
 
-        const start = performance.now();
-        let status = -1;
-        try {
-          const res = await fetch(ctx.endpoint, { signal: control.signal });
-          status = res.status;
-        } catch (e) {}
-        const end = performance.now();
+      const control = new AbortController();
+      setTimeout(() => control.abort(), time);
 
-        setResponses((prev) => prev.concat({ start, end, status }));
-      }, ctx.timeout);
+      const start = performance.now();
+      let status = -1;
+      try {
+        const res = await fetch(endpoint, { signal: control.signal });
+        status = res.status;
+      } catch (e) {}
+      const end = performance.now();
 
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [ctx]);
+      setResponses((prev) => prev.concat({ start, end, status }));
+    }, time);
 
-  // useEffect(() => console.log(responses), [responses])
+    return () => {
+      clearInterval(interval);
+    };
+  }, [capture, endpoint, time]);
 
   const width = 1000;
   const height = 1000;
   const xstep = width / responses.length;
-  const ystep = height / ctx?.timeout || 1;
+  const ystep = height / time;
 
   return (
     <div>
       <header>
-        {ctx ? (
+        {capture ? (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              setCtx();
+              setCapture(false);
             }}
           >
+            <dl>
+              <dt>Endpoint</dt>
+              <dd>{endpoint}</dd>
+              <dt>Interval (ms)</dt>
+              <dd>{time}</dd>
+            </dl>
             <button>stop</button>
           </form>
         ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              start();
+              setCapture(true);
             }}
           >
             <label>
@@ -81,7 +81,9 @@ function App() {
                 type="text"
                 name="endpoint"
                 value={endpoint}
-                onChange={(e) => setEndpoint(e.value)}
+                onChange={(e) => {
+                  setEndpoint(e.value);
+                }}
               />
             </label>
             <label>

@@ -12,6 +12,14 @@ code {
     monospace;
 }
 
+form {
+  margin: 1em;
+  min-height: 5em;
+}
+label {
+  display: block;
+}
+
 
 svg {
   background: #eee;
