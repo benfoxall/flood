@@ -1,23 +1,117 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from "react";
 
 function App() {
+  const [endpoint, setEndpoint] = useState("/");
+  const [time, setTime] = useState(500);
+
+  const [ctx, setCtx] = useState();
+  const [responses, setResponses] = useState([
+    {
+      start: 100,
+      end: 500,
+      status: 0,
+    },
+    {
+      start: 500,
+      end: 750,
+      status: 200,
+    },
+  ]);
+
+  const start = () => {
+    setCtx({ endpoint, time });
+  };
+
+  useEffect(() => {
+    if (ctx) {
+      setResponses([]);
+
+      const interval = setInterval(async () => {
+        console.log("tick");
+
+        const control = new AbortController();
+        setTimeout(() => control.abort(), ctx.timeout);
+
+        const start = performance.now();
+        let status = -1;
+        try {
+          const res = await fetch(ctx.endpoint, { signal: control.signal });
+          status = res.status;
+        } catch (e) {}
+        const end = performance.now();
+
+        setResponses((prev) => prev.concat({ start, end, status }));
+      }, ctx.timeout);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [ctx]);
+
+  // useEffect(() => console.log(responses), [responses])
+
+  const width = 1000;
+  const height = 1000;
+  const xstep = width / responses.length;
+  const ystep = height / ctx?.timeout || 1;
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div>
+      <header>
+        {ctx ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setCtx();
+            }}
+          >
+            <button>stop</button>
+          </form>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              start();
+            }}
+          >
+            <label>
+              Endpoint
+              <input
+                type="text"
+                name="endpoint"
+                value={endpoint}
+                onChange={(e) => setEndpoint(e.value)}
+              />
+            </label>
+            <label>
+              Interval (ms)
+              <input
+                type="number"
+                name="timeout"
+                value={time}
+                onChange={(e) => setTime(e.value)}
+              />
+            </label>
+
+            <input type="submit" value="start" />
+          </form>
+        )}
       </header>
+      <main>
+        <svg width={1000} height={1000} viewBox={`0 0 ${width} ${height}`}>
+          {responses.map((r, i) => (
+            <rect
+              key={i}
+              width={xstep}
+              height={ystep * (r.end - r.start)}
+              x={i * xstep}
+              y={height - ystep * (r.end - r.start)}
+              className={`status_${r.status}`}
+            ></rect>
+          ))}
+        </svg>
+      </main>
     </div>
   );
 }

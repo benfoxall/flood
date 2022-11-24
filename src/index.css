@@ -11,3 +11,22 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+svg {
+  background: #eee;
+  max-width: 80vmin;
+  max-height: 80vmin;
+  margin: 10vmin
+}
+
+rect {
+  stroke: #000;
+  fill: #fff;
+}
+.status_0 {
+  fill: #eee
+}
+.status_200 {
+  fill: #0c0
+}
